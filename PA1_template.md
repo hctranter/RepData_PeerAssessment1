@@ -17,7 +17,8 @@ This report answers a series of questions about an individuals personal activity
 #### Analysis
 
 Reading in the data and storing it in a data frame, "dat".
-```{r loaddata,echo = TRUE}
+
+```r
 url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
 
 library(downloader)
@@ -31,8 +32,16 @@ dat <- read.csv("activity.csv", sep = ",")
 
 Taking a look at the structure of the data frame.
 
-```{r}
+
+```r
 str(dat)
+```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : chr  "2012-10-01" "2012-10-01" "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
 ```
 
 The date and interval variables require a class change: 
@@ -40,7 +49,8 @@ The date and interval variables require a class change:
 * date from character class to date format
 * interval would be better expressed in hours, minutes, seconds using period class.
 
-```{r, results = "hide",message = FALSE}
+
+```r
 library(lubridate)
 library(stringr)
 dat$interval <- str_pad(as.character(dat$interval), width=4, side="left", pad="0")
@@ -54,8 +64,22 @@ dat$date <- ymd(dat$date)
 Checking the structure of the variables again reveals that the class changes
 have been successful and now the data set is in a good format for analysis.
 
-```{r}
+
+```r
 str(dat)
+```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Date, format: "2012-10-01" "2012-10-01" ...
+##  $ interval:Formal class 'Period' [package "lubridate"] with 6 slots
+##   .. ..@ .Data : num  0 0 0 0 0 0 0 0 0 0 ...
+##   .. ..@ year  : num  0 0 0 0 0 0 0 0 0 0 ...
+##   .. ..@ month : num  0 0 0 0 0 0 0 0 0 0 ...
+##   .. ..@ day   : num  0 0 0 0 0 0 0 0 0 0 ...
+##   .. ..@ hour  : num  0 0 0 0 0 0 0 0 0 0 ...
+##   .. ..@ minute: num  0 5 10 15 20 25 30 35 40 45 ...
 ```
 
 #### What is mean total number of steps taken per day?
@@ -63,7 +87,8 @@ Note: for this part of the assignment, the missing values in the dataset are ign
 The distribution of the total number of steps taken per day can be observed in 
 the histogram below. The histogram shows the modal class interval is 10000-11000 steps.   
 
-```{r,fig.width = 5, fig.height = 5, message = FALSE, warning = FALSE}
+
+```r
 library(dplyr)
 library(ggplot2)
 stepday <- dat %>%
@@ -82,18 +107,23 @@ ggplot(data = stepday, aes(totalsteps)) +
         theme(strip.text.y = element_text(size = 12),
               axis.text = element_text(size = 12),
               axis.title = element_text(size =12))
+```
 
+![](PA1_template_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+
+```r
 options(scipen = 999)
 meanstep <- signif(mean(stepday$totalsteps,na.rm = TRUE),digits = 5)
 medianstep <- signif(median(stepday$totalsteps, na.rm = TRUE), digits =5)
 ```
-The mean total number of steps taken per day is `r meanstep` and the median is `r medianstep`.
+The mean total number of steps taken per day is 10766 and the median is 10765.
 
 #### What is the average daily activity pattern?
 
 The time series plot shows the mean number of steps taken averaged across all days (y-axis) for each 5-minute interval (x-axis). The plot shows that the intervals with the largest average number of steps are between 8am and 9am. 
 
-```{r,fig.width = 5, fig.height = 5, warning= FALSE}
+
+```r
 intmean <-   dat %>% 
         group_by(interval) %>%
         summarise(meansteps = mean(steps,na.rm = TRUE))
@@ -110,26 +140,31 @@ ggplot(data = intmean, aes(x= as.numeric(interval)/3600, y= meansteps)) +
               axis.title = element_text(size =12))
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
 
-```{r}
+
+
+```r
 maxstepint <- intmean[which.max(intmean$meansteps),1] 
 maxstep <- signif(intmean[which.max(intmean$meansteps),2],3) 
 ```
 
-The 5-minute interval `r maxstepint` contains the maximum number of steps, `r maxstep`, on average, across all the days in the dataset,
+The 5-minute interval 8H 35M 0S contains the maximum number of steps, 206, on average, across all the days in the dataset,
 
 #### Imputing values for the NA's
 
-```{r}
+
+```r
 sumna <- sum(is.na(dat$steps))
 meanna <- round(mean(is.na(dat$steps)),3)
 ```
 
-The total number of missing values in the dataset is `r sumna` - this is a proportion of `r meanna` of the dataset.
+The total number of missing values in the dataset is 2304 - this is a proportion of 0.131 of the dataset.
 
 The presence of missing days may introduce bias into some calculations or summaries of the data. The mean number of steps taken, averaged across all days for each 5-minute interval will be used to replace the NA's in the original data set, dat. 
 
-```{r}
+
+```r
 datn <- dat
 
 datn$averagesteps <- rep(intmean$meansteps,nrow(datn)/nrow(intmean))
@@ -140,9 +175,10 @@ datn$steps[which(is.na(datn$steps))] <-
 datn <- datn[,1:3]
 ```
 
-The graph below shows that the distribution of the mean total number of steps before after the missing values were replaced. The histograms are identical apart from the bar representing the number of days 10000 to 11000 steps were counted. This indicates that data was missing for 8 complete days only and that the mean total steps `r meanstep` replaces the missing value for those days. 
+The graph below shows that the distribution of the mean total number of steps before after the missing values were replaced. The histograms are identical apart from the bar representing the number of days 10000 to 11000 steps were counted. This indicates that data was missing for 8 complete days only and that the mean total steps 10766 replaces the missing value for those days. 
 
-```{r, fig.width = 5, fig.height = 5, warning= FALSE}
+
+```r
 stepdayn <-     datn %>%
         group_by(date) %>%
         summarise(totalsteps = sum(steps)) %>%
@@ -169,14 +205,25 @@ ggplot(data = totsteps, aes(totalsteps)) +
               axis.title = element_text(size =12))
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+
 The table below compares mean and median total number of steps taken each day with missing values and missing values replaced. The means are equal which confirms that the data was missing for complete days only.
 
-```{r, warning = FALSE}
+
+```r
 totstepmm <- totsteps %>%
         group_by(stepNA) %>%
         summarise(median = median(totalsteps,na.rm = TRUE), 
                   mean = mean(totalsteps,na.rm = TRUE))
 totstepmm
+```
+
+```
+## # A tibble: 2 x 3
+##   stepNA   median   mean
+## * <fct>     <dbl>  <dbl>
+## 1 missing  10765  10766.
+## 2 replaced 10766. 10766.
 ```
 
 #### Are there differences in activity patterns between weekdays and weekends?
@@ -185,7 +232,8 @@ It is interesting to compare the individuals personal activity on a weekday (mon
 
 Below is a the plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). 
 
-```{r, fig.width = 5, fig.height = 5, warning = FALSE, message = FALSE}
+
+```r
 datn$partweek <- as.character(rep(NA, nrow(datn)))
 
 datn$day <- weekdays(datn$date)
@@ -216,6 +264,8 @@ ggplot(data = intmeanp, aes(x= as.numeric(interval)/3600, y= meansteps)) +
               axis.text = element_text(size = 12),
               axis.title = element_text(size =12))
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
 
 The plot shows that, in general, the individual is more active, on average, between the hours of 9am and 9pm compared with weekdays and is less active, on average, before 9am on the weekend compared with a weekday.
 
